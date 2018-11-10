@@ -90,6 +90,12 @@ class Board extends Component {
     this.state = { cards: cards, addingCard: false, newCardValue: "" };
   }
 
+  componentWillUpdate = () => {
+    let cards = (window.localStorage.cards) ? JSON.parse(window.localStorage.cards) : {};
+    cards[this.props.name] = this.state.cards;
+    window.localStorage.setItem( 'cards', JSON.stringify(cards));
+  }
+
   addCard = () => {
     this.setState(Object.assign(this.state, { addingCard: true }));
   }
@@ -101,12 +107,6 @@ class Board extends Component {
       this.state.cards.splice(index, 1);
       this.setState(Object.assign(this.state, { cards: this.state.cards  }));
     }
-  }
-
-  componentWillUpdate = () => {
-    let cards = (window.localStorage.cards) ? JSON.parse(window.localStorage.cards) : {};
-    cards[this.props.name] = this.state.cards;
-    window.localStorage.setItem( 'cards', JSON.stringify(cards));
   }
 
   submitCard = () => {
