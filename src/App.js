@@ -172,7 +172,7 @@ const boardStyles = () => {
     minWidth: 300,
     border: 3,
     borderStyle: "groove",
-    borderRadius: "20px",
+    borderRadius: "10px",
     overflow: "hidden"
   }
   return styles;
