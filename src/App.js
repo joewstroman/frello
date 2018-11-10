@@ -72,7 +72,8 @@ class Board extends Component {
     backgroundColor: "rgb(242,242,242)",
     textAlign: "center", 
     minWidth: 300,
-    border: "3"
+    border: "3",
+    borderStyle: "groove"
   }
   
   headerStyles = {
@@ -93,7 +94,6 @@ class Board extends Component {
   }
 
   componentWillUpdate = () => {
-    console.log("")
     let cards = (window.localStorage.cards) ? JSON.parse(window.localStorage.cards) : {};
     cards[this.props.name] = this.state.cards;
     window.localStorage.setItem( 'cards', JSON.stringify(cards));
