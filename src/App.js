@@ -19,20 +19,6 @@ class App extends Component {
     this.state = { names };
   }
 
-  getRandomColor = () => {
-    let color;
-
-    while (!color || this.randomColors.indexOf(color) >= 0) {
-      color = '#';
-      const letters = '0123456789ABCDEF';
-      for (var i = 0; i < 6; i++) {
-        color += letters[Math.floor(Math.random() * 16)];
-      }
-    }
-    this.randomColors.push(color);
-    return color + 'AA';
-  }
-
   addCard = (cardText, index, direction) => {
 
     if (index + direction >= this.boardRefs.length || index + direction < 0) {
@@ -54,32 +40,18 @@ class App extends Component {
 
   render() {
     return (
-      <div style={styles.app}>
+      <div style={appStyles()}>
         { this.state.names.map( this.renderBoard )}
       </div>
     );
   }
 
   renderBoard = (name, index) => {
-    return <Board getRandomColor={this.getRandomColor} firstBoard={index === 0} lastBoard={index + 1 === this.state.names.length} index={index} ref={b => {this.boardRefs.push(b)}} addCard={this.addCard} key={name} name={name} />
+    return <Board randomColors={this.randomColors} firstBoard={index === 0} lastBoard={index + 1 === this.state.names.length} index={index} ref={b => {this.boardRefs.push(b)}} addCard={this.addCard} key={name} name={name} />
   }
 }
 
 class Board extends Component {
-
-  boardStyles = { 
-    margin: "5px 0px",
-    backgroundColor: "rgb(242,242,242)",
-    textAlign: "center", 
-    minWidth: 300,
-    border: "3",
-    borderStyle: "groove"
-  }
-  
-  headerStyles = {
-    color: "white",
-    margin: "0"
-  }
 
   defaultCards = ['Grocery shopping', 'Repair your broken phone']
 
@@ -87,7 +59,6 @@ class Board extends Component {
 
   constructor(props) {
     super(props);
-    this.headerStyles.backgroundColor = this.props.getRandomColor();
     let storedCards = (window.localStorage.cards) ? JSON.parse(window.localStorage.cards) : {};
     let cards = (storedCards[this.props.name]) ? storedCards[this.props.name] : this.defaultCards;
     this.state = { cards: cards, addingCard: false };
@@ -132,9 +103,10 @@ class Board extends Component {
   }
 
   render() {
+    let titleStyles = headerStyles(this.props.randomColors);
     return (
-      <div style={this.boardStyles}>
-        <h3 style={this.headerStyles}>{this.props.name}</h3>
+      <div style={boardStyles()}>
+        <h3 style={titleStyles()}>{this.props.name}</h3>
         { this.state.cards.map(this.renderCard) }
         { (!this.state.addingCard) ? <button style={{margin: "5px 0px"}} onClick={this.addCard}>Add a card</button> : this.renderCardField() }
       </div>
@@ -167,14 +139,49 @@ class Card extends Component {
   }
 }
 
-const styles = {
-  app: {
+const getRandomColor = (colors) => {
+  let color;
+
+  while (!color || colors.indexOf(color) >= 0) {
+    color = '#';
+    const letters = '0123456789ABCDEF';
+    for (var i = 0; i < 6; i++) {
+      color += letters[Math.floor(Math.random() * 16)];
+    }
+  }
+  return color + 'AA';
+}
+
+const headerStyles = (colors) => () => {
+  let styles = {
+    backgroundColor: getRandomColor(colors),
+    color: "white",
+    margin: "0"
+  }
+  return styles;
+}
+
+const boardStyles = () => {
+  let styles = { 
+    margin: "5px 0px",
+    backgroundColor: "rgb(242,242,242)",
+    textAlign: "center", 
+    minWidth: 300,
+    border: 3,
+    borderStyle: "groove"
+  }
+  return styles;
+}
+
+const appStyles = () => {
+  let styles = {
     display: 'flex',
     flexDirection: 'row',
     alignItems: 'flex-start',
     justifyContent: 'space-around',
     padding: 25 / 2,
-  },
+  }
+  return styles;
 }
 
 export default App;
