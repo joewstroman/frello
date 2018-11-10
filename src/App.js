@@ -33,7 +33,7 @@ class App extends Component {
     return color + 'AA';
   }
 
-  moveCard = (card, index, direction) => {
+  addCard = (cardText, index, direction) => {
 
     if (index + direction >= this.boardRefs.length || index + direction < 0) {
       alert("There are no boards in that direction");
@@ -42,13 +42,13 @@ class App extends Component {
 
     const targetBoard = this.boardRefs[index + direction];
 
-    if (targetBoard.state.cards.indexOf(card.props.name) > -1) {
+    if (targetBoard.state.cards.indexOf(cardText) > -1) {
       alert("This card already exists on that board");
       return false;
     }
 
     
-    targetBoard.setState(Object.assign(targetBoard.state, {cards : targetBoard.state.cards.concat(card.props.name)} ));
+    targetBoard.setState(Object.assign(targetBoard.state, {cards : targetBoard.state.cards.concat(cardText)} ));
     return true;
   }
 
@@ -61,7 +61,7 @@ class App extends Component {
   }
 
   renderBoard = (name, index) => {
-    return <Board getRandomColor={this.getRandomColor} firstBoard={index === 0} lastBoard={index + 1 === this.state.names.length} index={index} ref={b => {this.boardRefs.push(b)}} moveCard={this.moveCard} key={name} name={name} />
+    return <Board getRandomColor={this.getRandomColor} firstBoard={index === 0} lastBoard={index + 1 === this.state.names.length} index={index} ref={b => {this.boardRefs.push(b)}} addCard={this.addCard} key={name} name={name} />
   }
 }
 
@@ -82,15 +82,18 @@ class Board extends Component {
 
   defaultCards = ['Grocery shopping', 'Repair your broken phone']
 
+  inputField;
+
   constructor(props) {
     super(props);
     this.headerStyles.backgroundColor = this.props.getRandomColor();
     let storedCards = (window.localStorage.cards) ? JSON.parse(window.localStorage.cards) : {};
     let cards = (storedCards[this.props.name]) ? storedCards[this.props.name] : this.defaultCards;
-    this.state = { cards: cards, addingCard: false, newCardValue: "" };
+    this.state = { cards: cards, addingCard: false };
   }
 
   componentWillUpdate = () => {
+    console.log("")
     let cards = (window.localStorage.cards) ? JSON.parse(window.localStorage.cards) : {};
     cards[this.props.name] = this.state.cards;
     window.localStorage.setItem( 'cards', JSON.stringify(cards));
@@ -101,7 +104,7 @@ class Board extends Component {
   }
 
   moveCard = (card, direction) => {
-    const success = this.props.moveCard(card, this.props.index, direction);
+    const success = this.props.addCard(card.props.name, this.props.index, direction);
     if (success) {
       const index = this.state.cards.indexOf(card.props.name);
       this.state.cards.splice(index, 1);
@@ -110,26 +113,14 @@ class Board extends Component {
   }
 
   submitCard = () => {
-    if (this.state.newCardValue.length > 0) {
-      this.setState(Object.assign(this.state, {
-        cards: this.state.cards.concat(this.state.newCardValue),
-        addingCard: false
-      }));
-    } else {
-      this.setState(Object.assign(this.state, {
-        addingCard: false
-      }));
-    }
-  }
-
-  updateNewCardValue = (evt) => {
-    this.setState(Object.assign(this.state, { newCardValue: evt.target.value }));
+    this.props.addCard(this.inputField.value, this.props.index, 0);
+    this.setState(Object.assign(this.state, { addingCard: false }));
   }
 
   renderCardField = () => {
     return (
       <div>
-        <input style={{margin: "5px 0px"}} onChange={this.updateNewCardValue} placeholder={"Enter card name"} />
+        <input ref={b => {this.inputField = b}} style={{margin: "5px 0px"}} placeholder={"Enter card name"} />
         <br />
         <button style={{margin: "5px 0px"}} onClick={this.submitCard}>Submit</button>
       </div>
