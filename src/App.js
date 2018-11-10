@@ -1,13 +1,7 @@
 import React, { Component } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faArrowLeft, faArrowRight } from '@fortawesome/free-solid-svg-icons'
 import './App.css';
-
-// NOTE: Please build this kanban board from scratch without pre-built components such as react-trello...
-
-// 1. Create a list of 4 boards with 2 default items in each list.
-// 2. Style boards according to the png provided.
-// 3. Create the functionality to add a task to each list.
-// 4. Create the buttons and functionality to move cards from one list to another.
-// 5. Persist cards in the browser.
 
 class App extends Component {
   boardRefs = [];
@@ -32,7 +26,6 @@ class App extends Component {
       alert("This card already exists on that board");
       return false;
     }
-
     
     targetBoard.setState(Object.assign(targetBoard.state, {cards : targetBoard.state.cards.concat(cardText)} ));
     return true;
@@ -103,7 +96,7 @@ class Board extends Component {
   renderCard = (text) => {
     return <Card onFirstBoard={this.props.firstBoard} onLastBoard={this.props.lastBoard} moveCard={this.moveCard} key={text} name={text} />
   }
-
+  
   render() {
     return (
       <div style={boardStyles()}>
@@ -129,12 +122,21 @@ class Card extends Component {
     this.props.moveCard(this, 1);
   }
 
+  renderLeftArrow = () => {
+    return <FontAwesomeIcon style={{cursor: "pointer", fontSize: "12px"}} onClick={this.moveLeft} icon={faArrowLeft} />
+  }
+
+  renderRightArrow = () => {
+    // return <span style={{cursor: "pointer"}} onClick={this.moveRight}>{"=>"}</span>
+    return <FontAwesomeIcon style={{cursor: "pointer", fontSize: "12px"}} onClick={this.moveRight} icon={faArrowRight} />
+  }
+
   render() {
     return (
       <div style={this.styles}>
-        { (!this.props.onFirstBoard) ? <span style={{cursor: "pointer"}} onClick={this.moveLeft}>{"<="}</span> : <span/> }
+        { (!this.props.onFirstBoard) ? this.renderLeftArrow() : <span/> }
         <span style={{padding: "0px 10px"}}>{this.props.name}</span>
-        { (!this.props.onLastBoard) ? <span style={{cursor: "pointer"}} onClick={this.moveRight}>{"=>"}</span> : <span/> }
+        { (!this.props.onLastBoard) ? this.renderRightArrow() : <span/> }
       </div>
     )
   }
@@ -169,7 +171,9 @@ const boardStyles = () => {
     textAlign: "center", 
     minWidth: 300,
     border: 3,
-    borderStyle: "groove"
+    borderStyle: "groove",
+    borderRadius: "20px",
+    overflow: "hidden"
   }
   return styles;
 }
