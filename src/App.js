@@ -47,7 +47,9 @@ class App extends Component {
   }
 
   renderBoard = (name, index) => {
-    return <Board randomColors={this.randomColors} firstBoard={index === 0} lastBoard={index + 1 === this.state.names.length} index={index} ref={b => {this.boardRefs.push(b)}} addCard={this.addCard} key={name} name={name} />
+    const randomColor = getRandomColor(this.randomColors);
+    this.randomColors.push(randomColor);
+    return <Board headerColor={randomColor} firstBoard={index === 0} lastBoard={index + 1 === this.state.names.length} index={index} ref={b => {this.boardRefs.push(b)}} addCard={this.addCard} key={name} name={name} />
   }
 }
 
@@ -103,10 +105,9 @@ class Board extends Component {
   }
 
   render() {
-    let titleStyles = headerStyles(this.props.randomColors);
     return (
       <div style={boardStyles()}>
-        <h3 style={titleStyles()}>{this.props.name}</h3>
+        <h3 style={headerStyles(this.props.headerColor)}>{this.props.name}</h3>
         { this.state.cards.map(this.renderCard) }
         { (!this.state.addingCard) ? <button style={{margin: "5px 0px"}} onClick={this.addCard}>Add a card</button> : this.renderCardField() }
       </div>
@@ -152,9 +153,9 @@ const getRandomColor = (colors) => {
   return color + 'AA';
 }
 
-const headerStyles = (colors) => () => {
+const headerStyles = (color) => {
   let styles = {
-    backgroundColor: getRandomColor(colors),
+    backgroundColor: color,
     color: "white",
     margin: "0"
   }
