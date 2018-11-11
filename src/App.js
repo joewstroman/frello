@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faArrowLeft, faArrowRight } from '@fortawesome/free-solid-svg-icons'
+import { faCaretLeft, faCaretRight, faTimesCircle } from '@fortawesome/free-solid-svg-icons'
 import './App.css';
 
 class App extends Component {
@@ -13,14 +13,13 @@ class App extends Component {
     this.state = { names };
   }
 
-  addCard = (cardText, index, direction) => {
-
-    if (index + direction >= this.boardRefs.length || index + direction < 0) {
+  addCard = (cardText, boardIndex) => {
+    if (boardIndex >= this.boardRefs.length || boardIndex < 0) {
       alert("There are no boards in that direction");
       return false;
     }
 
-    const targetBoard = this.boardRefs[index + direction];
+    const targetBoard = this.boardRefs[boardIndex];
 
     if (targetBoard.state.cards.indexOf(cardText) > -1) {
       alert("This card already exists on that board");
@@ -29,6 +28,10 @@ class App extends Component {
     
     targetBoard.setState(Object.assign(targetBoard.state, {cards : targetBoard.state.cards.concat(cardText)} ));
     return true;
+  }
+
+  getBoardIndex = (name) => {
+    return this.boardRefs.findIndex( (board) => board.props.name.toLowerCase() === name.toLowerCase() );
   }
 
   render() {
@@ -42,21 +45,29 @@ class App extends Component {
   renderBoard = (name, index) => {
     const randomColor = getRandomColor(this.randomColors);
     this.randomColors.push(randomColor);
-    return <Board headerColor={randomColor} firstBoard={index === 0} lastBoard={index + 1 === this.state.names.length} index={index} ref={b => {this.boardRefs.push(b)}} addCard={this.addCard} key={name} name={name} />
+    return <Board 
+      headerColor={randomColor} 
+      firstBoard={index === 0} 
+      lastBoard={index + 1 === this.state.names.length} 
+      index={index}
+      ref={b => {this.boardRefs.push(b)}} 
+      addCard={this.addCard} 
+      getBoardIndex={this.getBoardIndex}
+      key={name} 
+      name={name} />
   }
 }
 
 class Board extends Component {
 
-  defaultCards = ['Grocery shopping', 'Repair your broken phone']
-
   inputField;
+  defaultCards = ['Grocery shopping', 'Repair your broken phone']
 
   constructor(props) {
     super(props);
     let storedCards = (window.localStorage.cards) ? JSON.parse(window.localStorage.cards) : {};
     let cards = (storedCards[this.props.name]) ? storedCards[this.props.name] : this.defaultCards;
-    this.state = { cards: cards, addingCard: false };
+    this.state = { cards: cards, addingCard: false, movingCard: null };
   }
 
   componentWillUpdate = () => {
@@ -69,12 +80,44 @@ class Board extends Component {
     this.setState(Object.assign(this.state, { addingCard: true }));
   }
 
-  moveCard = (card, direction) => {
-    const success = this.props.addCard(card.props.name, this.props.index, direction);
-    if (success) {
-      const index = this.state.cards.indexOf(card.props.name);
-      this.state.cards.splice(index, 1);
-      this.setState(Object.assign(this.state, { cards: this.state.cards  }));
+  cancelAction = () => {
+    this.setState(Object.assign(this.state, { movingCard: false, addingCard: false }));
+  }
+
+  handleKeyPress = (callback) => (e) => {
+    if (e.keyCode === 13) {
+      callback();
+    } else if (e.keyCode === 27) {
+      this.cancelAction();
+    }
+  }
+
+  iconStyles = () => {
+    let styles = iconStyles();
+    styles.marginTop = "8px";
+    styles.marginLeft = "5px";
+    return styles;
+  }
+
+  moveCard = (card, boardIndex) => {
+    if (boardIndex > -1) {
+      const success = this.props.addCard(card.props.name, boardIndex);
+      if (success) {
+        const index = this.state.cards.indexOf(card.props.name);
+        this.state.cards.splice(index, 1);
+        this.setState(Object.assign(this.state, { cards: this.state.cards, movingCard: false  }));
+      }
+    } else {
+      this.setState(Object.assign(this.state, { movingCard: card }))
+    }
+  }
+
+  moveCardtoSpecificBoard = () => {
+    let boardIndex = this.props.getBoardIndex(this.inputField.value);
+    if (boardIndex > -1) {
+      this.moveCard(this.state.movingCard, boardIndex);
+    } else {
+      alert('Board does not exist');
     }
   }
 
@@ -86,18 +129,19 @@ class Board extends Component {
   renderCardField = () => {
     return (
       <div>
-        <input ref={b => {this.inputField = b}} style={{margin: "5px 0px"}} placeholder={"Enter card name"} />
+        <input autoFocus={true} onKeyUp={this.handleKeyPress(this.submitCard)} ref={b => {this.inputField = b}} style={{margin: "5px 0px"}} placeholder={"Enter card name"} />
         <br />
         <button style={{margin: "5px 0px"}} onClick={this.submitCard}>Submit</button>
+        <FontAwesomeIcon style={this.iconStyles()} onClick={this.cancelAction} icon={faTimesCircle} />
       </div>
     );
   }
 
   renderCard = (text) => {
-    return <Card onFirstBoard={this.props.firstBoard} onLastBoard={this.props.lastBoard} moveCard={this.moveCard} key={text} name={text} />
+    return <Card boardIndex={this.props.index} needsLeftArrow={!this.props.firstBoard} needsRightArrow={!this.props.lastBoard} moveCard={this.moveCard} moveCardLeft={this.moveCardLeft} moveCardRight={this.moveCardRight} key={text} name={text} />
   }
-  
-  render() {
+
+  renderNormalBoard = () => {
     return (
       <div style={boardStyles()}>
         <h3 style={headerStyles(this.props.headerColor)}>{this.props.name}</h3>
@@ -105,6 +149,26 @@ class Board extends Component {
         { (!this.state.addingCard) ? <button style={{margin: "5px 0px"}} onClick={this.addCard}>Add a card</button> : this.renderCardField() }
       </div>
     );
+  }
+
+  renderMovingCardBoard = () => {
+    const text = this.state.movingCard.props.name;
+    return (
+      <div style={boardStyles()}>
+        <h3 style={headerStyles(this.props.headerColor)}>{this.props.name}</h3>
+        <Card boardIndex={this.props.index} needsLeftArrow={false} needsRightArrow={false} moveCard={this.moveCard} key={text} name={text} />
+        <div>
+          <input autoFocus={true} onKeyUp={this.handleKeyPress(this.moveCardtoSpecificBoard)} ref={b => {this.inputField = b}} style={{margin: "5px 0px"}} placeholder={"Enter a board name"} />
+          <br />
+          <button style={{margin: "5px 0px"}} onClick={this.moveCardtoSpecificBoard}>Move Card</button>
+          <FontAwesomeIcon style={this.iconStyles()} onClick={this.cancelAction} icon={faTimesCircle} />
+        </div>
+      </div>
+    );
+  }
+  
+  render() {
+    return (this.state.movingCard) ? this.renderMovingCardBoard() : this.renderNormalBoard()
   }
 }
 
@@ -115,28 +179,31 @@ class Card extends Component {
   }
 
   moveLeft = () => {
-    this.props.moveCard(this, -1);
+    this.props.moveCard(this, this.props.boardIndex - 1);
   }
 
   moveRight = () => {
-    this.props.moveCard(this, 1);
+    this.props.moveCard(this, this.props.boardIndex + 1);
+  }
+
+  moveCard = () => {
+    this.props.moveCard(this);
   }
 
   renderLeftArrow = () => {
-    return <FontAwesomeIcon style={{cursor: "pointer", fontSize: "12px"}} onClick={this.moveLeft} icon={faArrowLeft} />
+    return <FontAwesomeIcon style={iconStyles()} onClick={this.moveLeft} icon={faCaretLeft} />
   }
 
   renderRightArrow = () => {
-    // return <span style={{cursor: "pointer"}} onClick={this.moveRight}>{"=>"}</span>
-    return <FontAwesomeIcon style={{cursor: "pointer", fontSize: "12px"}} onClick={this.moveRight} icon={faArrowRight} />
+    return <FontAwesomeIcon style={iconStyles()} onClick={this.moveRight} icon={faCaretRight} />
   }
 
   render() {
     return (
       <div style={this.styles}>
-        { (!this.props.onFirstBoard) ? this.renderLeftArrow() : <span/> }
-        <span style={{padding: "0px 10px"}}>{this.props.name}</span>
-        { (!this.props.onLastBoard) ? this.renderRightArrow() : <span/> }
+        { (this.props.needsLeftArrow) ? this.renderLeftArrow() : <span/> }
+        <span onClick={this.moveCard} style={{cursor: "pointer", margin: "0px 10px"}}>{this.props.name}</span>
+        { (this.props.needsRightArrow) ? this.renderRightArrow() : <span/> }
       </div>
     )
   }
@@ -153,6 +220,10 @@ const getRandomColor = (colors) => {
     }
   }
   return color + 'AA';
+}
+
+const iconStyles = () => {
+  return {cursor: "pointer", fontSize: "12px"}
 }
 
 const headerStyles = (color) => {
