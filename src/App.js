@@ -113,17 +113,21 @@ class Board extends Component {
   }
 
   moveCardtoSpecificBoard = () => {
-    let boardIndex = this.props.getBoardIndex(this.inputField.value);
-    if (boardIndex > -1) {
-      this.moveCard(this.state.movingCard, boardIndex);
-    } else {
-      alert('Board does not exist');
+    if (this.inputField.value.length > 0) {
+      let boardIndex = this.props.getBoardIndex(this.inputField.value);
+      if (boardIndex > -1) {
+        this.moveCard(this.state.movingCard, boardIndex);
+      } else {
+        alert('Board does not exist');
+      }
     }
   }
 
   submitCard = () => {
-    this.props.addCard(this.inputField.value, this.props.index, 0);
-    this.setState(Object.assign(this.state, { addingCard: false }));
+    if (this.inputField.value.length > 0) {
+      this.props.addCard(this.inputField.value, this.props.index, 0);
+      this.setState(Object.assign(this.state, { addingCard: false }));
+    }
   }
 
   renderCardField = () => {
@@ -131,7 +135,7 @@ class Board extends Component {
       <div>
         <input autoFocus={true} onKeyUp={this.handleKeyPress(this.submitCard)} ref={b => {this.inputField = b}} style={{margin: "5px 0px"}} placeholder={"Enter card name"} />
         <br />
-        <button style={{margin: "5px 0px"}} onClick={this.submitCard}>Submit</button>
+        <button style={{cursor: "pointer", margin: "5px 0px"}} onClick={this.submitCard}>Submit</button>
         <FontAwesomeIcon style={this.iconStyles()} onClick={this.cancelAction} icon={faTimesCircle} />
       </div>
     );
@@ -146,7 +150,7 @@ class Board extends Component {
       <div style={boardStyles()}>
         <h3 style={headerStyles(this.props.headerColor)}>{this.props.name}</h3>
         { this.state.cards.map(this.renderCard) }
-        { (!this.state.addingCard) ? <button style={{margin: "5px 0px"}} onClick={this.addCard}>Add a card</button> : this.renderCardField() }
+        { (!this.state.addingCard) ? <button style={{cursor: "pointer", margin: "5px 0px"}} onClick={this.addCard}>Add a card</button> : this.renderCardField() }
       </div>
     );
   }
@@ -202,7 +206,7 @@ class Card extends Component {
     return (
       <div style={this.styles}>
         { (this.props.needsLeftArrow) ? this.renderLeftArrow() : <span/> }
-        <span onClick={this.moveCard} style={{cursor: "pointer", margin: "0px 10px"}}>{this.props.name}</span>
+        <span onClick={this.moveCard} style={{cursor: "pointer", margin: "10px 10px"}}>{this.props.name}</span>
         { (this.props.needsRightArrow) ? this.renderRightArrow() : <span/> }
       </div>
     )
@@ -223,7 +227,7 @@ const getRandomColor = (colors) => {
 }
 
 const iconStyles = () => {
-  return {cursor: "pointer", fontSize: "12px"}
+  return {cursor: "pointer", fontSize: "13px"}
 }
 
 const headerStyles = (color) => {
