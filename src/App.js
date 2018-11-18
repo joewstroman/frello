@@ -37,7 +37,7 @@ class App extends Component {
       this.setState({ ...this.state, ...{ moveMode: true }});
     } else if (toggle === 'off') {
       
-      if (!this.hoveredBoard || !this.hoveredBoard.hoveredCard || !card) {
+      if (!this.hoveredBoard || !this.hoveredBoard.state.activeCard || !card) {
         this.setState({ ...this.state, ...{ moveMode: false }});
         return false;
       }
@@ -46,10 +46,10 @@ class App extends Component {
       if (targetBoard.props.index === card.props.boardIndex) {
         targetBoard.removeCard(card.props.index);
         this.setState({ ...this.state, ...{ moveMode: false }});
-        return targetBoard.addCard(card.props.name, this.hoveredBoard.hoveredCard.props.index + 1);
+        return targetBoard.addCard(card.props.name, this.hoveredBoard.state.activeCard.props.index + 1);
       }
       
-      let success = this.addCard(card.props.name, this.hoveredBoard.props.index, this.hoveredBoard.hoveredCard.props.index + 1);
+      let success = this.addCard(card.props.name, this.hoveredBoard.props.index, this.hoveredBoard.state.activeCard.props.index + 1);
 
       if (success) {
         this.boardRefs[card.props.boardIndex].removeCard(card.props.index);
@@ -110,7 +110,7 @@ class Board extends Component {
     super(props);
     let storedCards = (window.localStorage.cards) ? JSON.parse(window.localStorage.cards) : {};
     let cards = (storedCards[this.props.name]) ? storedCards[this.props.name] : this.defaultCards;
-    this.state = { cards, addingCard: false };
+    this.state = { cards, addingCard: false, hovered: false };
   }
 
   componentDidUpdate = (prevProps, prevState) => {
@@ -130,7 +130,7 @@ class Board extends Component {
     let firstCards = this.state.cards.slice(0, index);
     let lastCards = this.state.cards.slice(index, this.state.cards.length);
     let cards = firstCards.concat(text).concat(lastCards);
-    this.setState({ ...this.state, ...{ cards, addingCard: false }});
+    this.setState({ ...this.state, ...{ cards, addingCard: false, activeCard: null }});
     return true;
   }
 
@@ -166,8 +166,8 @@ class Board extends Component {
 
   removeHoveredCard = (card) => {
     return () => {
-      if (this.props.moveMode() && this.hoveredCard === card) {
-        this.hoveredCard = null;
+      if (this.props.moveMode() && this.state.activeCard === card) {
+        this.setState({ ...this.state, ...{ activeCard: null } })
       }
     }
   }
@@ -175,7 +175,7 @@ class Board extends Component {
   setHoveredCard = (card) => {
     return () => {
       if (this.props.moveMode()) {
-        this.hoveredCard = card;
+        this.setState({ ...this.state, ...{ activeCard: card } });
       }
     }
   }
@@ -240,18 +240,25 @@ class Card extends Component {
 
   constructor(props) {
     super(props);
-    this.state = { width: null, x: null, y: null, locked: false }
+    this.state = { locked: false }
   }
 
   drag = (mouseMoveEvent) => {
     if (this.props.moveMode()) {
       this.element.style.pointerEvents = 'none';
+      this.element.style.opacity = 0.4;
       this.element.style.width = this.rect.width + 'px';
       this.element.style.position = 'absolute';
       this.element.style.left = this.rect.left + mouseMoveEvent.pageX - this.startingPoint.x + 'px';
       this.element.style.top = this.rect.top + mouseMoveEvent.pageY - this.startingPoint.y + 'px';
-      this.element.style.opacity = 0.4;
     }
+  }
+
+  setCardPosition = (card, width, x, y) => {
+    card.style.position = 'absolute';
+    card.style.width = width + 'px';
+    card.style.left = x + 'px';
+    card.style.top = y + 'px';
   }
 
   resetCard = () => {
@@ -271,9 +278,16 @@ class Card extends Component {
       x: e.pageX,
       y: e.pageY
     }
+    this.placeHolderElement = e.currentTarget.cloneNode(true);
+    this.placeHolderElement.classList.remove('card');
+    this.placeHolderElement.style.opacity = 0.1;
+    this.element.classList.remove('card');
+
     window.addEventListener('mouseup', this.unlock, true);
     this.timeout = setTimeout( () => {
-      this.moving = true;
+
+      this.setCardPosition(this.element, this.rect.width, this.rect.left, this.rect.top);
+      this.element.parentNode.insertBefore(this.placeHolderElement, this.element.nextSibling);
       window.addEventListener('mousemove', this.drag, true);
       this.props.moveMode('on', this);
     }, 200);
@@ -283,7 +297,9 @@ class Card extends Component {
     clearTimeout(this.timeout);
     window.removeEventListener('mousemove', this.drag, true);
     window.removeEventListener('mouseup', this.unlock, true);
+    this.placeHolderElement.remove();
     if (this.startingPoint.x === e.pageX && this.startingPoint.y === e.pageY) {
+      this.resetCard();
       this.props.moveMode('off');
     }
     if (this.props.moveMode()) {
@@ -314,7 +330,7 @@ class Card extends Component {
 
   render() {
     return (
-        <div style={cardStyles()} onMouseLeave={this.props.removeHoveredCard(this)} onMouseEnter={this.props.setHoveredCard(this)} onMouseDown={this.lock}>
+        <div className='card' style={cardStyles()} onMouseLeave={this.props.removeHoveredCard(this)} onMouseEnter={this.props.setHoveredCard(this)} onMouseDown={this.lock}>
           { (this.props.needsLeftArrow) ? this.renderLeftArrow() : <span/> }
           <span style={{cursor: "pointer", margin: "10px 10px"}}>{this.props.name}</span>
           { (this.props.needsRightArrow) ? this.renderRightArrow() : <span/> }

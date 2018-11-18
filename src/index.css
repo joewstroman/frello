@@ -14,7 +14,7 @@ svg:hover {
   color: green;
 }
 
-div[move-mode=true] > div:hover {
+div[move-mode=true] > .card:hover {
   border-bottom-style: groove;
   border-bottom-width: 1px;
   border-color: rgb(112, 112, 112);
