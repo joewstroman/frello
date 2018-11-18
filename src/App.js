@@ -6,32 +6,74 @@ import './App.css';
 class App extends Component {
   boardRefs = [];
   randomColors = [];
+  hoveredBoard;
 
   constructor(props) {
     super(props);
     const names = (this.props.names) ? this.props.names : ['Derrick', 'Maxwell', 'Zaza', 'Sam'];
-    this.state = { names };
+    
+    this.randomColors = (window.localStorage.colors) ? JSON.parse(window.localStorage.colors) : [];
+
+    if (this.randomColors.length === 0) {
+      this.randomColors = names.reduce((acc) => {
+        return acc.concat(getRandomColor(acc));
+      }, []);
+      window.localStorage.colors = JSON.stringify(this.randomColors);
+    }
+
+    this.state = { names, moveMode: false };
   }
 
-  addCard = (cardText, boardIndex) => {
+  addCard = (cardText, boardIndex, cardIndex) => {
     if (boardIndex >= this.boardRefs.length || boardIndex < 0) {
       alert("There are no boards in that direction");
       return false;
     }
+    return this.boardRefs[boardIndex].addCard(cardText, cardIndex);
+  }
+  
+  moveMode = (toggle, card) => {
+    if (toggle === 'on') {
+      this.setState({ ...this.state, ...{ moveMode: true }});
+    } else if (toggle === 'off') {
+      
+      if (!this.hoveredBoard || !this.hoveredBoard.hoveredCard || !card) {
+        this.setState({ ...this.state, ...{ moveMode: false }});
+        return false;
+      }
 
-    const targetBoard = this.boardRefs[boardIndex];
+      const targetBoard = this.boardRefs[this.hoveredBoard.props.index];
+      if (targetBoard.props.index === card.props.boardIndex) {
+        targetBoard.removeCard(card.props.index);
+        this.setState({ ...this.state, ...{ moveMode: false }});
+        return targetBoard.addCard(card.props.name, this.hoveredBoard.hoveredCard.props.index + 1);
+      }
+      
+      let success = this.addCard(card.props.name, this.hoveredBoard.props.index, this.hoveredBoard.hoveredCard.props.index + 1);
 
-    if (targetBoard.state.cards.indexOf(cardText) > -1) {
-      alert("This card already exists on that board");
-      return false;
+      if (success) {
+        this.boardRefs[card.props.boardIndex].removeCard(card.props.index);
+      } else {
+        card.resetCard();
+      }
+
+      this.setState({ ...this.state, ...{ moveMode: false }});
+      return true;
+    } else {
+      return this.state.moveMode;
     }
-    
-    targetBoard.setState(Object.assign(targetBoard.state, {cards : targetBoard.state.cards.concat(cardText)} ));
-    return true;
   }
 
-  getBoardIndex = (name) => {
-    return this.boardRefs.findIndex( (board) => board.props.name.toLowerCase() === name.toLowerCase() );
+  setHoveredBoard = (board) => {
+    return () => {
+      this.hoveredBoard = board;
+    }
+  }
+
+  removeHoveredBoard = (board) => {
+    return () => {
+      if (this.hoveredBoard === board) this.hoveredBoard = null;
+    }
   }
 
   render() {
@@ -43,17 +85,18 @@ class App extends Component {
   }
 
   renderBoard = (name, index) => {
-    const randomColor = getRandomColor(this.randomColors);
-    this.randomColors.push(randomColor);
-    return <Board 
-      headerColor={randomColor} 
-      firstBoard={index === 0} 
-      lastBoard={index + 1 === this.state.names.length} 
+    return <Board
+      setHoveredBoard={this.setHoveredBoard}
+      removeHoveredBoard={this.removeHoveredBoard} 
+      moveMode={this.moveMode}
+      isMoving={this.moveMode()}
+      headerColor={this.randomColors[index]}
+      firstBoard={index === 0}
+      lastBoard={index + 1 === this.state.names.length}
       index={index}
-      ref={b => {this.boardRefs.push(b)}} 
-      addCard={this.addCard} 
-      getBoardIndex={this.getBoardIndex}
-      key={name} 
+      ref={b => {this.boardRefs.push(b)}}
+      addCard={this.addCard}
+      key={name}
       name={name} />
   }
 }
@@ -61,27 +104,49 @@ class App extends Component {
 class Board extends Component {
 
   inputField;
-  defaultCards = ['Grocery shopping', 'Repair your broken phone']
+  defaultCards = ['Grocery shopping', 'Repair your broken phone'];
 
   constructor(props) {
     super(props);
     let storedCards = (window.localStorage.cards) ? JSON.parse(window.localStorage.cards) : {};
     let cards = (storedCards[this.props.name]) ? storedCards[this.props.name] : this.defaultCards;
-    this.state = { cards: cards, addingCard: false, movingCard: null };
+    this.state = { cards, addingCard: false };
   }
 
-  componentWillUpdate = () => {
-    let cards = (window.localStorage.cards) ? JSON.parse(window.localStorage.cards) : {};
-    cards[this.props.name] = this.state.cards;
-    window.localStorage.setItem( 'cards', JSON.stringify(cards));
+  componentDidUpdate = (prevProps, prevState) => {
+    if (this.state.cards !== prevState.cards) {
+      let cards = (window.localStorage.cards) ? JSON.parse(window.localStorage.cards) : {};
+      cards[this.props.name] = this.state.cards;
+      window.localStorage.setItem('cards', JSON.stringify(cards));
+    }
   }
 
-  addCard = () => {
-    this.setState(Object.assign(this.state, { addingCard: true }));
+  addCard = (text, index) => {
+    if (this.state.cards.indexOf(text) > -1) {
+      alert("This card already exists on that board");
+      return false;
+    }
+    if (index === undefined) index = this.state.cards.length
+    let firstCards = this.state.cards.slice(0, index);
+    let lastCards = this.state.cards.slice(index, this.state.cards.length);
+    let cards = firstCards.concat(text).concat(lastCards);
+    this.setState({ ...this.state, ...{ cards, addingCard: false }});
+    return true;
+  }
+
+  removeCard = (index) => {
+    const firstCards = this.state.cards.slice(0, index);
+    const lastCards = this.state.cards.slice(index + 1, this.state.cards.length);
+    const cards = firstCards.concat(lastCards); 
+    this.setState({ ...this.state, ...{ cards }});
+  }
+
+  renderWithAddCardField = () => {
+    this.setState({ ...this.state, ...{ addingCard: true }});
   }
 
   cancelAction = () => {
-    this.setState(Object.assign(this.state, { movingCard: false, addingCard: false }));
+    this.setState({ ...this.state, ...{ addingCard: false }});
   }
 
   handleKeyPress = (callback) => (e) => {
@@ -99,34 +164,32 @@ class Board extends Component {
     return styles;
   }
 
-  moveCard = (card, boardIndex) => {
-    if (boardIndex > -1) {
-      const success = this.props.addCard(card.props.name, boardIndex);
-      if (success) {
-        const index = this.state.cards.indexOf(card.props.name);
-        this.state.cards.splice(index, 1);
-        this.setState(Object.assign(this.state, { cards: this.state.cards, movingCard: false  }));
+  removeHoveredCard = (card) => {
+    return () => {
+      if (this.props.moveMode() && this.hoveredCard === card) {
+        this.hoveredCard = null;
       }
-    } else {
-      this.setState(Object.assign(this.state, { movingCard: card }))
     }
   }
 
-  moveCardtoSpecificBoard = () => {
-    if (this.inputField.value.length > 0) {
-      let boardIndex = this.props.getBoardIndex(this.inputField.value);
-      if (boardIndex > -1) {
-        this.moveCard(this.state.movingCard, boardIndex);
-      } else {
-        alert('Board does not exist');
+  setHoveredCard = (card) => {
+    return () => {
+      if (this.props.moveMode()) {
+        this.hoveredCard = card;
       }
+    }
+  }
+
+  moveCard = (card, boardIndex) => {
+    if (boardIndex > -1) {
+      const success = this.props.addCard(card.props.name, boardIndex);
+      if (success) this.removeCard(card.props.index);
     }
   }
 
   submitCard = () => {
     if (this.inputField.value.length > 0) {
-      this.props.addCard(this.inputField.value, this.props.index, 0);
-      this.setState(Object.assign(this.state, { addingCard: false }));
+      this.props.addCard(this.inputField.value, this.props.index);
     }
   }
 
@@ -141,45 +204,92 @@ class Board extends Component {
     );
   }
 
-  renderCard = (text) => {
-    return <Card boardIndex={this.props.index} needsLeftArrow={!this.props.firstBoard} needsRightArrow={!this.props.lastBoard} moveCard={this.moveCard} moveCardLeft={this.moveCardLeft} moveCardRight={this.moveCardRight} key={text} name={text} />
-  }
-
-  renderNormalBoard = () => {
-    return (
-      <div style={boardStyles()}>
-        <h3 style={headerStyles(this.props.headerColor)}>{this.props.name}</h3>
-        { this.state.cards.map(this.renderCard) }
-        { (!this.state.addingCard) ? <button style={{cursor: "pointer", margin: "5px 0px"}} onClick={this.addCard}>Add a card</button> : this.renderCardField() }
-      </div>
-    );
-  }
-
-  renderMovingCardBoard = () => {
-    const text = this.state.movingCard.props.name;
-    return (
-      <div style={boardStyles()}>
-        <h3 style={headerStyles(this.props.headerColor)}>{this.props.name}</h3>
-        <Card boardIndex={this.props.index} needsLeftArrow={false} needsRightArrow={false} moveCard={this.moveCard} key={text} name={text} />
-        <div>
-          <input autoFocus={true} onKeyUp={this.handleKeyPress(this.moveCardtoSpecificBoard)} ref={b => {this.inputField = b}} style={{margin: "5px 0px"}} placeholder={"Enter a board name"} />
-          <br />
-          <button style={{margin: "5px 0px"}} onClick={this.moveCardtoSpecificBoard}>Move Card</button>
-          <FontAwesomeIcon style={this.iconStyles()} onClick={this.cancelAction} icon={faTimesCircle} />
-        </div>
-      </div>
-    );
+  renderCard = (text, index) => {
+    return <Card 
+      setHoveredCard={this.setHoveredCard}
+      removeHoveredCard={this.removeHoveredCard}
+      moveMode={this.props.moveMode}
+      boardIndex={this.props.index}
+      removeCard={this.removeCard}
+      index={index}
+      needsLeftArrow={!this.props.firstBoard} 
+      needsRightArrow={!this.props.lastBoard} 
+      moveCard={this.moveCard} 
+      moveCardLeft={this.moveCardLeft} 
+      moveCardRight={this.moveCardRight} 
+      key={text} 
+      name={text} />
   }
   
   render() {
-    return (this.state.movingCard) ? this.renderMovingCardBoard() : this.renderNormalBoard()
+    return (
+      <div move-mode={this.props.moveMode().toString()} onMouseEnter={this.props.setHoveredBoard(this)} onMouseLeave={this.props.removeHoveredBoard(this)} style={boardStyles()}>
+        <h3 style={headerStyles(this.props.headerColor)}>{this.props.name}</h3>
+        { this.state.cards.map(this.renderCard) }
+        { (!this.state.addingCard) ? <button style={{cursor: "pointer", margin: "5px 0px"}} onClick={this.renderWithAddCardField}>Add a card</button> : this.renderCardField() }
+      </div>
+    );
   }
 }
 
 class Card extends Component {
-  
-  styles = {
-    padding: "5px 0px"
+
+  rect;
+  element;
+  startingPoint;
+
+  constructor(props) {
+    super(props);
+    this.state = { width: null, x: null, y: null, locked: false }
+  }
+
+  drag = (mouseMoveEvent) => {
+    if (this.props.moveMode()) {
+      this.element.style.pointerEvents = 'none';
+      this.element.style.width = this.rect.width + 'px';
+      this.element.style.position = 'absolute';
+      this.element.style.left = this.rect.left + mouseMoveEvent.pageX - this.startingPoint.x + 'px';
+      this.element.style.top = this.rect.top + mouseMoveEvent.pageY - this.startingPoint.y + 'px';
+      this.element.style.opacity = 0.4;
+    }
+  }
+
+  resetCard = () => {
+    this.element.style.pointerEvents = '';
+    this.element.style.width = '';
+    this.element.style.position = 'static';
+    this.element.style.left = '';
+    this.element.style.top = '';
+    this.element.style.opacity = '';
+  }
+
+  lock = (e) => {
+    e.preventDefault();
+    this.element = e.currentTarget;
+    this.rect = this.element.getBoundingClientRect();
+    this.startingPoint = {
+      x: e.pageX,
+      y: e.pageY
+    }
+    window.addEventListener('mouseup', this.unlock, true);
+    this.timeout = setTimeout( () => {
+      this.moving = true;
+      window.addEventListener('mousemove', this.drag, true);
+      this.props.moveMode('on', this);
+    }, 200);
+  }
+
+  unlock = (e) => {
+    clearTimeout(this.timeout);
+    window.removeEventListener('mousemove', this.drag, true);
+    window.removeEventListener('mouseup', this.unlock, true);
+    if (this.startingPoint.x === e.pageX && this.startingPoint.y === e.pageY) {
+      this.props.moveMode('off');
+    }
+    if (this.props.moveMode()) {
+      const success = this.props.moveMode('off', this);
+      if (!success) this.resetCard();
+    }
   }
 
   moveLeft = () => {
@@ -204,12 +314,12 @@ class Card extends Component {
 
   render() {
     return (
-      <div style={this.styles}>
-        { (this.props.needsLeftArrow) ? this.renderLeftArrow() : <span/> }
-        <span onClick={this.moveCard} style={{cursor: "pointer", margin: "10px 10px"}}>{this.props.name}</span>
-        { (this.props.needsRightArrow) ? this.renderRightArrow() : <span/> }
-      </div>
-    )
+        <div style={cardStyles()} onMouseLeave={this.props.removeHoveredCard(this)} onMouseEnter={this.props.setHoveredCard(this)} onMouseDown={this.lock}>
+          { (this.props.needsLeftArrow) ? this.renderLeftArrow() : <span/> }
+          <span style={{cursor: "pointer", margin: "10px 10px"}}>{this.props.name}</span>
+          { (this.props.needsRightArrow) ? this.renderRightArrow() : <span/> }
+        </div>
+      )
   }
 }
 
@@ -237,6 +347,13 @@ const headerStyles = (color) => {
     margin: "0"
   }
   return styles;
+}
+
+const cardStyles = () => {
+  return { 
+    padding: "5px 0px",
+    backgroundColor: "rgb(242,242,242)"
+  }
 }
 
 const boardStyles = () => {
