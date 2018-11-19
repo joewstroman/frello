@@ -35,7 +35,7 @@ svg:hover {
   border-bottom-style: groove;
   border-bottom-width: 1px;
   border-color: rgb(112, 112, 112);
-  margin-bottom: 22px;
+  /* margin-bottom: 22px; */
   transition: all 0.1s ease;
 }
 
