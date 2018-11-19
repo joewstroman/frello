@@ -5,6 +5,30 @@ body {
   background-color: rgba(0,0,0,.01);
 }
 
+button {
+ display:inline-block;
+ padding:0.35em 1.2em;
+ border:0.1em groove;
+ margin:0 0.3em 0.3em 0;
+ border-radius:0.12em;
+ box-sizing: border-box;
+ text-decoration:none;
+ font-weight:400;
+ color: black;
+ text-align:center;
+ margin: 5px 0px;
+ transition: all 0.3s;
+ background-color: white;
+
+}
+
+input {
+  text-align: center;
+  padding: 5px 20px;
+  margin: 8px 0;
+  box-sizing: border-box;
+}
+
 svg {
   transition: all 0.5s ease !important;
   transition: font-size .4s ease-in-out;
@@ -20,11 +44,11 @@ svg:hover {
   -moz-box-shadow: 1px 2px 4px rgba(0, 0, 0, .5);
   -webkit-box-shadow: 1px 2px 4px rgba(0, 0, 0, .5);
   box-shadow: 1px 2px 4px rgba(0, 0, 0, .5);
-  transition: height 0.4s ease;
+  transition: all 0.4s ease;
 }
 
 .board > .card {
-  animation: slide-card-down 0.2s ease;
+  animation: appear 1s ease;
 }
 
 .board > .add-card-field {
@@ -35,7 +59,6 @@ svg:hover {
   border-bottom-style: groove;
   border-bottom-width: 1px;
   border-color: rgb(112, 112, 112);
-  /* margin-bottom: 22px; */
   transition: all 0.1s ease;
 }
 

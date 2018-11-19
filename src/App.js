@@ -16,8 +16,12 @@ class App extends Component {
 
     if (this.randomColors.length === 0) {
       this.randomColors = names.reduce((acc) => {
-        return acc.concat(getRandomColor(acc));
-      }, []);
+        let color = getRandomColor();
+        while (acc.indexOf(color) > -1) {
+          color = getRandomColor();
+        }
+        return acc.concat(color);
+      }, [getRandomColor()]);
       window.localStorage.colors = JSON.stringify(this.randomColors);
     }
 
@@ -89,7 +93,6 @@ class App extends Component {
       setHoveredBoard={this.setHoveredBoard}
       removeHoveredBoard={this.removeHoveredBoard} 
       moveMode={this.moveMode}
-      isMoving={this.moveMode()}
       headerColor={this.randomColors[index]}
       firstBoard={index === 0}
       lastBoard={index + 1 === this.state.names.length}
@@ -198,7 +201,7 @@ class Board extends Component {
       <div className='add-card-field'>
         <input autoFocus={true} onKeyUp={this.handleKeyPress(this.submitCard)} ref={b => {this.inputField = b}} style={{margin: "5px 0px"}} placeholder={"Enter card name"} />
         <br />
-        <button style={{cursor: "pointer", margin: "5px 0px"}} onClick={this.submitCard}>Submit</button>
+        <Button label="Submit" clickHandler={this.submitCard} />
         <FontAwesomeIcon style={this.iconStyles()} onClick={this.cancelAction} icon={faTimesCircle} />
       </div>
     );
@@ -226,10 +229,32 @@ class Board extends Component {
       <div className="board" move-mode={this.props.moveMode().toString()} onMouseEnter={this.props.setHoveredBoard(this)} onMouseLeave={this.props.removeHoveredBoard(this)} style={boardStyles()}>
         <h3 style={headerStyles(this.props.headerColor)}>{this.props.name}</h3>
         { this.state.cards.map(this.renderCard) }
-        { (!this.state.addingCard) ? <button style={{cursor: "pointer", margin: "5px 0px"}} onClick={this.renderWithAddCardField}>Add a card</button> : this.renderCardField() }
+        { (!this.state.addingCard) ? <Button label="Add a card" color={this.props.headerColor} clickHandler={this.renderWithAddCardField} /> : this.renderCardField() }
       </div>
     );
   }
+}
+
+class Button extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { hovered: false }
+  }
+
+  setStyle = () => {
+    this.setState({ hovered: !this.state.hovered });
+  }
+
+  render() {
+    const styles = {
+      backgroundColor: (this.state.hovered) ? this.props.color.slice(0,7).concat('44') : "white",
+      color: (this.state.hovered) ? 'rgb(120,120,120)' : 'black'
+    }
+
+    return (
+      <button style={styles} onClick={this.props.clickHandler} onMouseLeave={this.setStyle} onMouseEnter={this.setStyle}>{this.props.label}</button>
+      )
+    }
 }
 
 class Card extends Component {
@@ -337,17 +362,12 @@ class Card extends Component {
   }
 }
 
-const getRandomColor = (colors) => {
-  let color;
+const getRandomColor = () => {
+  let red = (135 + Math.floor(Math.random() * 120)).toString(16);
+  let green = (135 + Math.floor(Math.random() * 120)).toString(16);
+  let blue = (200 + Math.floor(Math.random() * 55)).toString(16);
 
-  while (!color || colors.indexOf(color) >= 0) {
-    color = '#';
-    const letters = '0123456789ABCDEF';
-    for (var i = 0; i < 6; i++) {
-      color += letters[Math.floor(Math.random() * 16)];
-    }
-  }
-  return color + 'AA';
+  return `#${red}${green}${blue}D6`;
 }
 
 const iconStyles = () => {
