@@ -201,7 +201,7 @@ class Board extends Component {
       <div className='add-card-field'>
         <input autoFocus={true} onKeyUp={this.handleKeyPress(this.submitCard)} ref={b => {this.inputField = b}} style={{margin: "5px 0px"}} placeholder={"Enter card name"} />
         <br />
-        <Button label="Submit" clickHandler={this.submitCard} />
+        <Button label="Submit" color={this.props.headerColor} clickHandler={this.submitCard} />
         <FontAwesomeIcon style={this.iconStyles()} onClick={this.cancelAction} icon={faTimesCircle} />
       </div>
     );
