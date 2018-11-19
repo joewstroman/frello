@@ -195,7 +195,7 @@ class Board extends Component {
 
   renderCardField = () => {
     return (
-      <div>
+      <div className='add-card-field'>
         <input autoFocus={true} onKeyUp={this.handleKeyPress(this.submitCard)} ref={b => {this.inputField = b}} style={{margin: "5px 0px"}} placeholder={"Enter card name"} />
         <br />
         <button style={{cursor: "pointer", margin: "5px 0px"}} onClick={this.submitCard}>Submit</button>
@@ -223,7 +223,7 @@ class Board extends Component {
   
   render() {
     return (
-      <div move-mode={this.props.moveMode().toString()} onMouseEnter={this.props.setHoveredBoard(this)} onMouseLeave={this.props.removeHoveredBoard(this)} style={boardStyles()}>
+      <div className="board" move-mode={this.props.moveMode().toString()} onMouseEnter={this.props.setHoveredBoard(this)} onMouseLeave={this.props.removeHoveredBoard(this)} style={boardStyles()}>
         <h3 style={headerStyles(this.props.headerColor)}>{this.props.name}</h3>
         { this.state.cards.map(this.renderCard) }
         { (!this.state.addingCard) ? <button style={{cursor: "pointer", margin: "5px 0px"}} onClick={this.renderWithAddCardField}>Add a card</button> : this.renderCardField() }
@@ -278,14 +278,12 @@ class Card extends Component {
       x: e.pageX,
       y: e.pageY
     }
-    this.placeHolderElement = e.currentTarget.cloneNode(true);
-    this.placeHolderElement.classList.remove('card');
-    this.placeHolderElement.style.opacity = 0.1;
     this.element.classList.remove('card');
+    this.placeHolderElement = e.currentTarget.cloneNode(true);
+    this.placeHolderElement.style.opacity = 0.1;
 
     window.addEventListener('mouseup', this.unlock, true);
     this.timeout = setTimeout( () => {
-
       this.setCardPosition(this.element, this.rect.width, this.rect.left, this.rect.top);
       this.element.parentNode.insertBefore(this.placeHolderElement, this.element.nextSibling);
       window.addEventListener('mousemove', this.drag, true);
@@ -378,9 +376,9 @@ const boardStyles = () => {
     backgroundColor: "rgb(242,242,242)",
     textAlign: "center", 
     minWidth: 300,
-    border: 3,
+    border: 1,
     borderStyle: "groove",
-    borderRadius: "10px",
+    borderRadius: "5px",
     overflow: "hidden"
   }
   return styles;

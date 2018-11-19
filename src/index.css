@@ -2,6 +2,7 @@ body {
   margin: 0;
   padding: 0;
   font-family: sans-serif;
+  background-color: rgba(0,0,0,.01);
 }
 
 svg {
@@ -14,10 +15,53 @@ svg:hover {
   color: green;
 }
 
-div[move-mode=true] > .card:hover {
+.board {
+  animation: slide-board-up 0.7s ease;
+  -moz-box-shadow: 1px 2px 4px rgba(0, 0, 0, .5);
+  -webkit-box-shadow: 1px 2px 4px rgba(0, 0, 0, .5);
+  box-shadow: 1px 2px 4px rgba(0, 0, 0, .5);
+  transition: height 0.4s ease;
+}
+
+.board > .card {
+  animation: slide-card-down 0.2s ease;
+}
+
+.board > .add-card-field {
+  animation: appear 1s ease;
+}
+
+.board[move-mode=true] > .card:hover {
   border-bottom-style: groove;
   border-bottom-width: 1px;
   border-color: rgb(112, 112, 112);
-  margin-bottom: 18px;
-  transition: all 0.1s ease !important;
+  margin-bottom: 22px;
+  transition: all 0.1s ease;
+}
+
+@keyframes appear {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes slide-board-up {
+  0% {
+      transform: translateY(400px);
+  }
+  100% {
+      transform: translateY(0);
+  }
+}
+
+@keyframes slide-card-down {
+  0% {
+    transform: translateY(-5px);
+  }
+  100% {
+    transform: translateY(0);
+  }
 }
