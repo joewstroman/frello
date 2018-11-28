@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faCaretLeft, faCaretRight, faTimesCircle } from '@fortawesome/free-solid-svg-icons'
-import { appStyles, boardStyles, cardStyles, getRandomColor, headerStyles, iconStyles } from './Styles.js'
+import { appStyles, boardStyles, cardStyles, getRandomColor, headerStyles, iconStyles } from './core/styles.js'
 import './App.css';
 
 class App extends Component {
