@@ -21,3 +21,10 @@ yarn install
 yarn start
 ```
 
+![Demo #1](demos/demo1.gif)
+
+
+![Demo #2](demos/demo2.gif)
+
+
+![Demo #3](demos/demo3.gif)
